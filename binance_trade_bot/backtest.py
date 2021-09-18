@@ -1,8 +1,7 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
 from traceback import format_exc
 from typing import Dict, List
-
+from datetime import datetime, timedelta, timezone
 import binance.client
 from binance import Client
 from sqlitedict import SqliteDict
@@ -45,6 +44,9 @@ class MockBinanceManager(BinanceAPIManager):
         self.db.set_coins(coins_list)
         if self.reinit_trader_callback is not None:
             self.reinit_trader_callback()
+
+    def now(self):
+        return self.datetime.replace(tzinfo=timezone.utc)
 
     def setup_websockets(self):
         pass  # No websockets are needed for backtesting

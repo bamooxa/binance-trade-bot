@@ -3,6 +3,7 @@ import math
 import os
 import time
 import traceback
+from datetime import datetime, timezone
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Callable, Dict, Optional
@@ -198,6 +199,9 @@ class BinanceAPIManager:  # pylint:disable=too-many-public-methods
                 config.BRIDGE.symbol, client, cache, initial_balances or {config.BRIDGE.symbol: 100.0}
             ),
         )
+
+    def now(self):
+        return datetime.now(tz=timezone.utc)
 
     def setup_websockets(self):
         self.stream_manager = StreamManagerWorker.create(self.cache, self.config, self.logger)

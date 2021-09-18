@@ -13,12 +13,13 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         config = configparser.ConfigParser()
         config["DEFAULT"] = {
             "bridge": "USDT",
-            "scout_multiplier": "5",
+            "scout_margin": "1",
             "scout_sleep_time": "1",
             "hourToKeepScoutHistory": "1",
             "tld": "com",
             "strategy": "default",
             "enable_paper_trading": False,
+            "ratio_adjust_weight": "300"
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -36,8 +37,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         )
 
         # Get config for scout
-        self.SCOUT_MULTIPLIER = float(
-            os.environ.get("SCOUT_MULTIPLIER") or config.get(USER_CFG_SECTION, "scout_multiplier")
+        self.SCOUT_MARGIN = float(
+            os.environ.get("SCOUT_MARGIN") or config.get(USER_CFG_SECTION, "scout_margin")
         )
         self.SCOUT_SLEEP_TIME = int(
             os.environ.get("SCOUT_SLEEP_TIME") or config.get(USER_CFG_SECTION, "scout_sleep_time")
@@ -68,3 +69,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.ENABLE_PAPER_TRADING = (
             os.environ.get("ENABLE_PAPER_TRADING") or config.get(USER_CFG_SECTION, "enable_paper_trading")
         ) == "True"
+        self.RATIO_ADJUST_WEIGHT = float(
+            os.environ.get("RATIO_ADJUST_WEIGHT") or config.get(USER_CFG_SECTION, "ratio_adjust_weight")
+        )
+        self.RATIO_ADJUST_WEIGHT = int(
+            os.environ.get("RATIO_ADJUST_WEIGHT") or config.get(USER_CFG_SECTION, "ratio_adjust_weight")
+        )

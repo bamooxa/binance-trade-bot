@@ -13,13 +13,13 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         config = configparser.ConfigParser()
         config["DEFAULT"] = {
             "bridge": "USDT",
+            "scout_prior": False,
             "scout_margin": "1",
             "scout_sleep_time": "1",
             "hourToKeepScoutHistory": "1",
             "tld": "com",
             "strategy": "default",
-            "enable_paper_trading": False,
-            "ratio_adjust_weight": "300"
+            "enable_paper_trading": False
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -40,6 +40,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.SCOUT_MARGIN = float(
             os.environ.get("SCOUT_MARGIN") or config.get(USER_CFG_SECTION, "scout_margin")
         )
+        self.SCOUT_PRIOR = (
+            os.environ.get("SCOUT_PRIOR") or config.get(USER_CFG_SECTION, "scout_prior")
+        ) == "True"
         self.SCOUT_SLEEP_TIME = int(
             os.environ.get("SCOUT_SLEEP_TIME") or config.get(USER_CFG_SECTION, "scout_sleep_time")
         )

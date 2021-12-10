@@ -207,7 +207,7 @@ class AutoTrader(ABC):
         price_amounts: Dict[str, (float, float)] = {}
 
         scout_logs = []
-        for to_idx, ratio in enumerate(self.db.ratios_manager.get_from_coin(coin.idx)):
+        for to_idx, old_ratio in enumerate(self.db.ratios_manager.get_from_coin(coin.idx)):
             if coin.idx == to_idx:
                 continue
             to_coin = CoinStub.get_by_idx(to_idx)
@@ -227,22 +227,25 @@ class AutoTrader(ABC):
                 scout_logs.append(
                     LogScout(
                         self.db.ratios_manager.get_pair_id(coin.idx, to_idx),
-                        ratio,
+                        old_ratio,
                         coin_sell_price,
                         optional_coin_buy_price,
                     )
                 )
 
-            # Obtain (current coin)/(optional coin)
-            coin_opt_coin_ratio = coin_sell_price / optional_coin_buy_price
+            curr_ratio = coin_sell_price / optional_coin_buy_price
 
-            # Fees
-            from_fee = self.manager.get_fee(coin.symbol, self.config.BRIDGE.symbol, True)
-            to_fee = self.manager.get_fee(to_coin.symbol, self.config.BRIDGE.symbol, False)
-            transaction_fee = from_fee + to_fee - from_fee * to_fee
-            ratio_dict[(coin.idx, to_coin.idx)] = (
-                (1 - transaction_fee) * coin_opt_coin_ratio / ratio - 1 - self.config.SCOUT_MARGIN / 100
-            )
+            # Test ratios with margin
+            if self.config.SCOUT_PRIOR:
+                new_ratio = curr_ratio / old_ratio - (1 + self.config.SCOUT_MARGIN / 100)
+            else:
+                # Fees
+                from_fee = self.manager.get_fee(coin.symbol, self.config.BRIDGE.symbol, True)
+                to_fee = self.manager.get_fee(to_coin.symbol, self.config.BRIDGE.symbol, False)
+                transaction_fee = from_fee + to_fee - from_fee * to_fee
+
+                new_ratio = (1 - transaction_fee) * curr_ratio / old_ratio - (1 + self.config.SCOUT_MARGIN / 100)
+            ratio_dict[(coin.idx, to_coin.idx)] = new_ratio
 
         if len(scout_logs) > 0:
             self.db.batch_log_scout(scout_logs)

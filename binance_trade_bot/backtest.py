@@ -5,13 +5,14 @@ from datetime import datetime, timedelta, timezone
 import binance.client
 from binance import Client
 from sqlitedict import SqliteDict
+from sqlalchemy.orm.session import Session
 
 from .binance_api_manager import BinanceAPIManager, BinanceOrderBalanceManager
 from .binance_stream_manager import BinanceCache, BinanceOrder
 from .config import Config
 from .database import Database
 from .logger import Logger
-from .models import Pair, ScoutHistory
+from .models import Pair, Trade, TradeState, ScoutHistory
 from .strategies import get_strategy
 
 
@@ -33,7 +34,12 @@ class MockBinanceManager(BinanceAPIManager):
         self.sqlite_cache = sqlite_cache
         self.config = config
         self.datetime = start_date or datetime(2021, 1, 1)
-        self.balances = start_balances or {config.BRIDGE.symbol: 100}
+        self.balances = start_balances or {config.BRIDGE.symbol: 10000}
+        self.trades = 0
+        self.positive_coin_jumps = 0
+        self.negative_coin_jumps = 0
+        self.paid_fees = {}
+        self.coins_trades = {}
         self.non_existing_pairs = set()
         self.reinit_trader_callback = None
 
@@ -122,12 +128,32 @@ class MockBinanceManager(BinanceAPIManager):
         order_quantity = self.buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
         target_quantity = order_quantity * from_coin_price
         self.balances[target_symbol] -= target_quantity
-        order_filled_quantity = order_quantity * (1 - self.get_fee(origin_coin, target_coin, False))
+        fee = self.get_fee(origin_coin, target_coin, False)
+        order_filled_quantity = order_quantity * (1 - fee)
         self.balances[origin_symbol] = self.balances.get(origin_symbol, 0) + order_filled_quantity
+        if origin_symbol not in self.paid_fees.keys():
+            self.paid_fees[origin_symbol] = 0
+        self.paid_fees[origin_symbol] += fee * order_quantity
+        if origin_symbol not in self.coins_trades.keys():
+            self.coins_trades[origin_symbol] = []
+        self.coins_trades[origin_symbol].append(self.balances[origin_symbol])
         self.logger.info(
             f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
         )
+        session: Session
+        with self.db.db_session() as session:
+            from_coin = session.merge(origin_coin)
+            to_coin = session.merge(target_coin)
+            trade = Trade(from_coin, to_coin, False)
+            trade.datetime = self.datetime
+            trade.state = TradeState.COMPLETE
+            session.add(trade)
+            # Flush so that SQLAlchemy fills in the id column
+            session.flush()
+            self.db.send_update(trade)
+
+        self.trades += 1
 
         return BinanceOrder(
             defaultdict(
@@ -187,6 +213,12 @@ class MockBinanceManager(BinanceAPIManager):
                     continue
                 total += price * balance
         return total
+
+    def get_diff(self, symbol):
+        if len(self.coins_trades[symbol]) == 1:
+            return None
+        return round(
+            ((self.coins_trades[symbol][-1] - self.coins_trades[symbol][-2]) / self.coins_trades[symbol][-1] * 100), 2)
 
 
 class MockDatabase(Database):

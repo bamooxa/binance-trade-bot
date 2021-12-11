@@ -260,70 +260,34 @@ class AutoTrader(ABC):
         """
         Given a coin, search for a coin to jump to
         """
-        can_walk_deeper = True
-        jump_chain = [coin.symbol]
-        # We simulate a possible buy chain and land on its very end, updating all ratios along the path
-        # as it would be if we buy them all with real orders
-        last_coin: CoinStub = coin
-        last_coin_sell_price = coin_sell_price
-        last_coin_buy_price = 0.0  # it will be set for reasonable value after we found our first jump candidate
-        last_coin_quote = quote_amount
-        last_coin_amount = coin_amount
-        bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
-        is_initial_coin = True
+        ratio_dict, prices = self._get_ratios(
+            coin, coin_sell_price, quote_amount, enable_scout_log=True
+        )
 
-        while can_walk_deeper:
-            if not is_initial_coin:
-                last_coin_sell_price, last_coin_quote = self.manager.get_market_sell_price(
-                    last_coin.symbol + self.config.BRIDGE.symbol, last_coin_amount
-                )
-                if last_coin_sell_price is None:
-                    self.db.ratios_manager.rollback()
-                    return
-            ratio_dict, prices = self._get_ratios(
-                last_coin, last_coin_sell_price, last_coin_quote, enable_scout_log=is_initial_coin
+        ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
+
+        # if we have any viable options, pick the one with the biggest ratio
+        if ratio_dict:
+            best_pair = max(ratio_dict, key=ratio_dict.get)
+            best_coin = CoinStub.get_by_idx(best_pair[1])
+            best_coin_price, _ = prices[best_coin.symbol]
+            self.logger.info(f"Will be jumping from {coin.symbol} to {best_coin.symbol}")
+            result = self.transaction_through_bridge(coin, best_coin, coin_sell_price, best_coin_price)
+
+            # Calc expected gain
+            from_fee = self.manager.get_fee(coin.symbol, self.config.BRIDGE.symbol, True)
+            to_fee = self.manager.get_fee(best_coin.symbol, self.config.BRIDGE.symbol, False)
+            bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
+            expected_sold_quantity = self.manager.sell_quantity(coin.symbol, self.config.BRIDGE.symbol, coin_amount)
+            expected_bridge = expected_sold_quantity * coin_sell_price * (1 - from_fee) + bridge_balance
+            expected_bought_quantity_w_fees = self.manager.buy_quantity(
+                best_coin.symbol, self.config.BRIDGE.symbol, expected_bridge, best_coin_price
+            ) * (1 - to_fee)
+            self.logger.info(
+                f"Expected: {expected_bought_quantity_w_fees:0.08f}, "
+                f"Actual: {result.cumulative_filled_quantity:0.08f}, "
+                f"Slippage: {expected_bought_quantity_w_fees / result.cumulative_filled_quantity - 1:0.06%}"
             )
-
-            ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
-
-            # if we have any viable options, pick the one with the biggest ratio
-            if ratio_dict:
-                new_best_pair = max(ratio_dict, key=ratio_dict.get)
-                new_best_coin = CoinStub.get_by_idx(new_best_pair[1])
-                if not is_initial_coin:  # update thresholds because we should buy anyway when walk through chain
-                    # This should be performed in a single transaction so we don't leave our ratios in invalid state
-                    if not self.update_trade_threshold(
-                        last_coin, new_best_coin, last_coin_buy_price, last_coin_amount, last_coin_quote
-                    ):
-                        self.db.ratios_manager.rollback()
-                        return
-                last_coin = new_best_coin
-                last_coin_buy_price, last_coin_amount = prices[last_coin.symbol]
-                jump_chain.append(last_coin.symbol)
-                is_initial_coin = False
-            else:
-                can_walk_deeper = False
-        self.db.commit_ratios()
-
-        if not is_initial_coin:
-            if len(jump_chain) > 2:
-                self.logger.info(f"Squashed jump chain: {jump_chain}")
-            if jump_chain[0] != jump_chain[-1]:
-                self.logger.info(f"Will be jumping from {coin.symbol} to {last_coin.symbol}")
-                result = self.transaction_through_bridge(coin, last_coin, coin_sell_price, last_coin_buy_price)
-                expected_sold_quantity = self.manager.sell_quantity(coin.symbol, self.config.BRIDGE.symbol, coin_amount)
-                expected_bridge = expected_sold_quantity * coin_sell_price * 0.999 + bridge_balance
-                expected_bought_quantity_no_fees = self.manager.buy_quantity(
-                    last_coin.symbol, self.config.BRIDGE.symbol, expected_bridge, last_coin_buy_price
-                )
-                self.logger.info(
-                    f"Expected: {expected_bought_quantity_no_fees:0.08f}, "
-                    f"Actual: {result.cumulative_filled_quantity:0.08f}, "
-                    f"Slippage: {expected_bought_quantity_no_fees/result.cumulative_filled_quantity - 1:0.06%}"
-                )
-            else:
-                self.update_trade_threshold(coin, None, coin_sell_price, 0, quote_amount)
-                self.logger.info(f"Eliminated jump loop from {coin.symbol} to {coin.symbol}")
 
     @postpone_heavy_calls
     def bridge_scout(self):

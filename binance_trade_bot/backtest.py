@@ -55,7 +55,10 @@ class MockBinanceManager(BinanceAPIManager):
         self.datetime += timedelta(minutes=interval)
 
     def get_fee(self, origin_coin: str, target_coin: str, selling: bool):
-        return 0.001
+        if self.config.TRADE_FEE == "auto":
+            return 0.001
+        else:
+            return float(self.config.TRADE_FEE) / 100
 
     def get_ticker_price(self, ticker_symbol: str):
         """

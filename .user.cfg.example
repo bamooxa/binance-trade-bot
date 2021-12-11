@@ -11,3 +11,5 @@ scout_sleep_time=1
 strategy=default
 enable_paper_trading=False
 update_ratio_settings=reverse, to
+trade_fee=auto
+min_notional=auto

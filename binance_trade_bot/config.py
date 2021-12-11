@@ -20,7 +20,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "tld": "com",
             "strategy": "default",
             "enable_paper_trading": False,
-            "update_ratio_settings": "reverse, to"
+            "update_ratio_settings": "reverse, to",
+            "trade_fee": "auto",
+            "min_notional": "auto"
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -40,7 +42,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         # Get config for scout
         self.SCOUT_MARGIN = float(
             os.environ.get("SCOUT_MARGIN") or config.get(USER_CFG_SECTION, "scout_margin")
-        )
+        ) / 100
         self.SCOUT_PRIOR = (
             os.environ.get("SCOUT_PRIOR") or config.get(USER_CFG_SECTION, "scout_prior")
         ) == "True"
@@ -82,3 +84,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.UPDATE_RATIO_SETTINGS = (
                 os.environ.get("UPDATE_RATIO_SETTINGS") or config.get(USER_CFG_SECTION, "update_ratio_settings")
         ).split(", ")
+        self.TRADE_FEE = (
+            os.environ.get("TRADE_FEE") or config.get(USER_CFG_SECTION, "trade_fee")
+        )
+        self.MIN_NOTIONAL = (
+            os.environ.get("MIN_NOTIONAL") or config.get(USER_CFG_SECTION, "min_notional")
+        )

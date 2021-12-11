@@ -215,6 +215,8 @@ class BinanceAPIManager:  # pylint:disable=too-many-public-methods
         return self.binance_client.get_bnb_burn_spot_margin()["spotBNBBurn"]
 
     def get_fee(self, origin_coin: str, target_coin: str, selling: bool):
+        if self.config.TRADE_FEE != "auto":
+            return float(self.config.TRADE_FEE) / 100
         base_fee = self.get_trade_fees()[origin_coin + target_coin]
         if not self.get_using_bnb_for_fees():
             return base_fee
@@ -307,6 +309,8 @@ class BinanceAPIManager:  # pylint:disable=too-many-public-methods
 
     @cached(cache=TTLCache(maxsize=2000, ttl=43200))
     def get_min_notional(self, origin_symbol: str, target_symbol: str):
+        if self.config.MIN_NOTIONAL != "auto":
+            return float(self.config.MIN_NOTIONAL)
         return float(self.get_symbol_filter(origin_symbol, target_symbol, "MIN_NOTIONAL")["minNotional"])
 
     def buy_alt(self, origin_coin: str, target_coin: str, buy_price: float) -> BinanceOrder:

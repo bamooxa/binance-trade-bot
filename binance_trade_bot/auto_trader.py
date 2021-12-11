@@ -238,14 +238,14 @@ class AutoTrader(ABC):
 
             # Test ratios with margin
             if self.config.SCOUT_PRIOR:
-                new_ratio = curr_ratio / old_ratio - (1 + self.config.SCOUT_MARGIN / 100)
+                new_ratio = curr_ratio / old_ratio - (1 + self.config.SCOUT_MARGIN)
             else:
                 # Fees
                 from_fee = self.manager.get_fee(coin.symbol, self.config.BRIDGE.symbol, True)
                 to_fee = self.manager.get_fee(to_coin.symbol, self.config.BRIDGE.symbol, False)
                 transaction_fee = from_fee + to_fee - from_fee * to_fee
 
-                new_ratio = (1 - transaction_fee) * curr_ratio / old_ratio - (1 + self.config.SCOUT_MARGIN / 100)
+                new_ratio = (1 - transaction_fee) * curr_ratio / old_ratio - (1 + self.config.SCOUT_MARGIN)
             ratio_dict[(coin.idx, to_coin.idx)] = new_ratio
 
         if len(scout_logs) > 0:

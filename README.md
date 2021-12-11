@@ -61,6 +61,8 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 - **scout_sleep_time** - Controls how many seconds bot should wait between analysis of current prices. Since the bot now operates on websockets this value should be set to something low (like 1), the reasons to set it above 1 are when you observe high CPU usage by bot or you got api errors about requests weight limit.
 - **enable_paper_trading** - (`True` or `False` default `False`) run bot with virtual wallet to check its performance without risking any money.
 - **update_ratio_settings** - (options: 'reverse', 'to', 'none') Defines how the ratios are updated when the bot trades. Example trade A -> B, and X is every other coin: 'none' or left blank = no ratios are updated, 'reverse' = B:A updated, 'to' = 'X:B' updated.
+- **trade_fee** - 'auto' to automatically detect or set to fixed percentage. e.g. '0.1' = fixed 0.1% trade fee.
+- **min_notional** - 'auto' to automatically detect or set to fixed float. e.g. '10' = $10 USDT min notional (if bridge=USDT).
 #### Environment Variables
 
 All of the options provided in `user.cfg` can also be configured using environment variables.

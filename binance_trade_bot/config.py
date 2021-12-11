@@ -19,7 +19,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "hourToKeepScoutHistory": "1",
             "tld": "com",
             "strategy": "default",
-            "enable_paper_trading": False
+            "enable_paper_trading": False,
+            "update_ratio_settings": "reverse, to"
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -78,3 +79,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.RATIO_ADJUST_WEIGHT = int(
             os.environ.get("RATIO_ADJUST_WEIGHT") or config.get(USER_CFG_SECTION, "ratio_adjust_weight")
         )
+        self.UPDATE_RATIO_SETTINGS = (
+                os.environ.get("UPDATE_RATIO_SETTINGS") or config.get(USER_CFG_SECTION, "update_ratio_settings")
+        ).split(", ")

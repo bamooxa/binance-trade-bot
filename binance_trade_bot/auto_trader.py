@@ -80,31 +80,33 @@ class AutoTrader(ABC):
         :returns True if update was successful, False otherwise
         """
         # Note: rethink if its better just to divide quote by price instead explicit passing amount
+        update_success = True
+        if "to" not in self.config.UPDATE_RATIO_SETTINGS and "reverse" not in self.config.UPDATE_RATIO_SETTINGS:
+            return update_success
 
-        if to_coin_buy_price is None:
-            self.logger.info(
-                "Skipping update... current coin {} not found".format(to_coin.symbol + self.config.BRIDGE.symbol)
-            )
-            return False
-
-        for coin in CoinStub.get_all():
-            if coin is to_coin:
-                continue
-
-            coin_price, _ = self.manager.get_market_sell_price_fill_quote(
-                coin.symbol + self.config.BRIDGE.symbol, quote_amount
-            )
-
-            if coin_price is None:
+        if "to" in self.config.UPDATE_RATIO_SETTINGS:
+            if to_coin_buy_price is None:
                 self.logger.info(
-                    f"Update for coin {coin.symbol + self.config.BRIDGE.symbol} can't be performed, not enough "
-                    f"orders in order book "
+                    "Skipping update... current coin {} not found".format(to_coin.symbol + self.config.BRIDGE.symbol)
                 )
-                return False
+                update_success = False
+            for coin in CoinStub.get_all():
+                if coin is to_coin:
+                    continue
 
-            self.db.ratios_manager.set(coin.idx, to_coin.idx, coin_price / to_coin_buy_price)
-        '''
-        if from_coin is not None:
+                coin_price, _ = self.manager.get_market_sell_price_fill_quote(
+                    coin.symbol + self.config.BRIDGE.symbol, quote_amount
+                )
+
+                if coin_price is None:
+                    self.logger.info(
+                        f"Update for coin {coin.symbol + self.config.BRIDGE.symbol} can't be performed, not enough "
+                        f"orders in order book "
+                    )
+                    update_success = False
+
+                self.db.ratios_manager.set(coin.idx, to_coin.idx, coin_price / to_coin_buy_price)
+        if "reverse" in self.config.UPDATE_RATIO_SETTINGS and from_coin is not None:
             from_coin_buy_price, _ = self.manager.get_market_buy_price(
                 from_coin.symbol + self.config.BRIDGE.symbol, quote_amount
             )
@@ -115,14 +117,13 @@ class AutoTrader(ABC):
                 self.logger.info(
                     f"Can't update reverse pair {to_coin.symbol}->{from_coin.symbol}, not enough orders in order book"
                 )
-                return False
+                update_success = False
             self.db.ratios_manager.set(
                 to_coin.idx,
                 from_coin.idx,
                 max(self.db.ratios_manager.get(to_coin.idx, from_coin.idx), to_coin_sell_price / from_coin_buy_price),
             )
-        '''
-        return True
+        return update_success
 
     def _max_value_in_wallet(self) -> float:
         balances = {coin.symbol: self.manager.get_currency_balance(coin.symbol) for coin in CoinStub.get_all()}

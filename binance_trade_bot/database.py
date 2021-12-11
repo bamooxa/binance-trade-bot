@@ -86,11 +86,10 @@ class Database:
             for coin in coins:
                 CoinStub.create(coin.symbol)
             for from_coin in coins:
+                to_coins = [pair.to_coin for pair in session.query(Pair).filter(Pair.from_coin == from_coin).all()]
                 for to_coin in coins:
-                    if from_coin != to_coin:
-                        pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin).first()
-                        if pair is None:
-                            session.add(Pair(from_coin, to_coin))
+                    if to_coin not in to_coins and from_coin != to_coin:
+                        session.add(Pair(from_coin, to_coin))
 
         # Fill lookup table for id discovery
         with self.db_session() as session:

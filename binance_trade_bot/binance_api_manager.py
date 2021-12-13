@@ -313,8 +313,8 @@ class BinanceAPIManager:  # pylint:disable=too-many-public-methods
             return float(self.config.MIN_NOTIONAL)
         return float(self.get_symbol_filter(origin_symbol, target_symbol, "MIN_NOTIONAL")["minNotional"])
 
-    def buy_alt(self, origin_coin: str, target_coin: str, buy_price: float) -> BinanceOrder:
-        return self.retry(self._buy_alt, origin_coin, target_coin, buy_price)
+    def buy_alt(self, origin_coin: str, target_coin: str, buy_price: float, bridge_amount: float = None) -> BinanceOrder:
+        return self.retry(self._buy_alt, origin_coin, target_coin, buy_price, bridge_amount)
 
     def buy_quantity(
         self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
@@ -325,7 +325,7 @@ class BinanceAPIManager:  # pylint:disable=too-many-public-methods
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
-    def _buy_alt(self, origin_coin: str, target_coin: str, buy_price: float):  # pylint: disable=too-many-locals
+    def _buy_alt(self, origin_coin: str, target_coin: str, buy_price: float, bridge_amount: float):  # pylint: disable=too-many-locals
         """
         Buy altcoin
         """
@@ -333,7 +333,10 @@ class BinanceAPIManager:  # pylint:disable=too-many-public-methods
         target_symbol = target_coin
 
         origin_balance = self.get_currency_balance(origin_symbol)
-        target_balance = self.get_currency_balance(target_symbol)
+        if bridge_amount is None:
+            target_balance = self.get_currency_balance(target_symbol)
+        else:
+            target_balance = bridge_amount
         from_coin_price = buy_price
 
         order_quantity = self.buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)

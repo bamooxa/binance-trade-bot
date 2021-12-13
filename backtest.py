@@ -28,8 +28,8 @@ if __name__ == "__main__":
         if manager.datetime.strftime("%d/%m/%Y") != current_date:
             current_date = manager.datetime.strftime("%d/%m/%Y")
             time_diff = (manager.datetime - start_time).total_seconds() / 3600
-            per_trade = round(100 * ((bridge_value / history[0][0]) ** (2 / (trades - 1)) - 1), 4)
-            per_hour = round(100 * ((bridge_value / history[0][0]) ** (1 / time_diff) - 1), 4)
+            per_trade = round(100 * ((bridge_value / history[0][1]) ** (2 / (trades - 1)) - 1), 4)
+            per_hour = round(100 * ((bridge_value / history[0][1]) ** (1 / time_diff) - 1), 4)
             print("------")
             print("TIME:", manager.datetime)
             print("TRADES:", trades)

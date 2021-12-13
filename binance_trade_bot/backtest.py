@@ -141,18 +141,6 @@ class MockBinanceManager(BinanceAPIManager):
             f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
         )
-        session: Session
-        with self.db.db_session() as session:
-            from_coin = session.merge(origin_coin)
-            to_coin = session.merge(target_coin)
-            trade = Trade(from_coin, to_coin, False)
-            trade.datetime = self.datetime
-            trade.state = TradeState.COMPLETE
-            session.add(trade)
-            # Flush so that SQLAlchemy fills in the id column
-            session.flush()
-            self.db.send_update(trade)
-
         self.trades += 1
 
         return BinanceOrder(
@@ -191,25 +179,25 @@ class MockBinanceManager(BinanceAPIManager):
         )
 
     def collate_coins(self, target_symbol: str):
+        return self.collate(target_symbol, self.balances)
+
+    def collate_fees(self, target_symbol: str):
+        return self.collate(target_symbol, self.paid_fees)
+
+    def collate(self, target_symbol: str, balances: dict):
         total = 0
-        for coin, balance in self.balances.items():
+        for coin, balance in balances.items():
             if coin == target_symbol:
                 total += balance
                 continue
             if coin == self.config.BRIDGE.symbol:
                 price = self.get_ticker_price(target_symbol + coin)
-                if price is None:
+                if price is None or price == 0.0:
                     continue
                 total += balance / price
             else:
-                if coin + target_symbol in self.non_existing_pairs:
-                    continue
-                price = None
-                try:
-                    price = self.get_ticker_price(coin + target_symbol)
-                except binance.client.BinanceAPIException:
-                    self.non_existing_pairs.add(coin + target_symbol)
-                if price is None:
+                price = self.get_ticker_price(coin + target_symbol)
+                if price is None or price == 0.0:
                     continue
                 total += price * balance
         return total

@@ -154,7 +154,7 @@ class MockBinanceManager(BinanceAPIManager):
 
         if diff is not None:
             if diff > 0.0:
-                self.positve_coin_jumps += 1
+                self.positive_coin_jumps += 1
             else:
                 self.negative_coin_jumps += 1
         self.trades += 1

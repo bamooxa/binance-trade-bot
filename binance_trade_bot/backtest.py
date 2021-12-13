@@ -141,6 +141,22 @@ class MockBinanceManager(BinanceAPIManager):
             f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
         )
+        diff = self.get_diff(origin_symbol)
+        if diff is None:
+            diff_str = "None"
+        else:
+            diff_str = f"{diff} %"
+
+        self.logger.info(
+            f"{self.datetime} Bought {origin_symbol} {round(self.balances[origin_symbol], 4)} "
+            f"for {from_coin_price} {target_symbol}. Gain: {diff_str}"
+        )
+
+        if diff is not None:
+            if diff > 0.0:
+                self.positve_coin_jumps += 1
+            else:
+                self.negative_coin_jumps += 1
         self.trades += 1
 
         return BinanceOrder(

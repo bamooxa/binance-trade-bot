@@ -75,12 +75,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.ENABLE_PAPER_TRADING = (
             os.environ.get("ENABLE_PAPER_TRADING") or config.get(USER_CFG_SECTION, "enable_paper_trading")
         ) == "True"
-        self.RATIO_ADJUST_WEIGHT = float(
-            os.environ.get("RATIO_ADJUST_WEIGHT") or config.get(USER_CFG_SECTION, "ratio_adjust_weight")
-        )
-        self.RATIO_ADJUST_WEIGHT = int(
-            os.environ.get("RATIO_ADJUST_WEIGHT") or config.get(USER_CFG_SECTION, "ratio_adjust_weight")
-        )
         self.UPDATE_RATIO_SETTINGS = (
                 os.environ.get("UPDATE_RATIO_SETTINGS") or config.get(USER_CFG_SECTION, "update_ratio_settings")
         ).split(", ")

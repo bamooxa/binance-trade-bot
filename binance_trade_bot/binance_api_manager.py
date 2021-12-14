@@ -277,6 +277,12 @@ class BinanceAPIManager:  # pylint:disable=too-many-public-methods
 
         return price
 
+    def get_historical_tickers(self, ticker_symbol: str, start_date_str: str, end_date_str: str, limit: int):
+        res = self.binance_client.get_historical_klines(
+                            ticker_symbol, "1m", start_date_str, end_date_str,
+                            limit=limit)
+        return [float(t[1]) for t in res]
+
     def get_currency_balance(self, currency_symbol: str, force=False) -> float:
         """
         Get balance of a specific coin

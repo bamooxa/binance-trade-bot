@@ -99,6 +99,20 @@ class MockBinanceManager(BinanceAPIManager):
             val = self.sqlite_cache.get(key, None)
         return val if val != 0.0 else None
 
+    def get_historical_tickers(self, ticker_symbol: str, start_date_str: str, end_date_str: str, limit: int):
+        start_date = datetime.strptime(start_date_str, "%d %b %Y %H:%M:%S")
+        end_date = datetime.strptime(end_date_str, "%d %b %Y %H:%M:%S")
+        hist = []
+        target_date = start_date
+        while target_date <= end_date:
+            key = f"{ticker_symbol} - {target_date}"
+            val = self.sqlite_cache.get(key, None)
+            if val is None:
+                print(f"No downloaded prices for {ticker_symbol}")
+                break
+            hist.append(val)
+            target_date += timedelta(minutes=1)
+
     def get_currency_balance(self, currency_symbol: str, force=False):
         """
         Get balance of a specific coin

@@ -105,7 +105,8 @@ class MockBinanceManager(BinanceAPIManager):
         hist = []
         target_date = start_date
         while target_date <= end_date:
-            key = f"{ticker_symbol} - {target_date}"
+            target_date_str = target_date.strftime("%d %b %Y %H:%M:%S")
+            key = f"{ticker_symbol} - {target_date_str}"
             val = self.sqlite_cache.get(key, None)
             if val is None:
                 print(f"No downloaded prices for {ticker_symbol}")

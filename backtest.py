@@ -11,6 +11,8 @@ if __name__ == "__main__":
     show_btc = True
     print(f"BACKTEST from {start_time} to {end_time}")
     current_date = start_time.strftime("%d/%m/%Y")
+    per_trade = 0
+    per_hour = 0
     for manager in backtest(start_time, end_time):
         if show_btc:
             btc_value = manager.collate_coins("BTC")
@@ -28,8 +30,12 @@ if __name__ == "__main__":
         if manager.datetime.strftime("%d/%m/%Y") != current_date:
             current_date = manager.datetime.strftime("%d/%m/%Y")
             time_diff = (manager.datetime - start_time).total_seconds() / 3600
-            per_trade = round(100 * ((bridge_value / history[0][1]) ** (2 / (trades - 1)) - 1), 4)
-            per_hour = round(100 * ((bridge_value / history[0][1]) ** (1 / time_diff) - 1), 4)
+
+            try:
+                per_trade = round(100 * ((bridge_value / history[0][1]) ** (2 / (trades - 1)) - 1), 4)
+                per_hour = round(100 * ((bridge_value / history[0][1]) ** (1 / time_diff) - 1), 4)
+            except:
+                pass
             print("------")
             print("TIME:", manager.datetime)
             print("TRADES:", trades)

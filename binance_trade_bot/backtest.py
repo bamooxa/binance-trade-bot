@@ -113,6 +113,7 @@ class MockBinanceManager(BinanceAPIManager):
                 break
             hist.append(val)
             target_date += timedelta(minutes=1)
+        return hist
 
     def get_currency_balance(self, currency_symbol: str, force=False):
         """

@@ -100,8 +100,8 @@ class MockBinanceManager(BinanceAPIManager):
         return val if val != 0.0 else None
 
     def get_historical_tickers(self, ticker_symbol: str, start_date_str: str, end_date_str: str, limit: int):
-        start_date = datetime.strptime(start_date_str, "%d %b %Y %H:%M:%S")
-        end_date = datetime.strptime(end_date_str, "%d %b %Y %H:%M:%S")
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d %H:%M')
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M')
         hist = []
         target_date = start_date
         while target_date <= end_date:

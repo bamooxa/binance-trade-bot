@@ -133,11 +133,13 @@ class MockBinanceManager(BinanceAPIManager):
         price = self.get_ticker_price(symbol)
         return (price, quote_amount / price) if price is not None else (None, None)
 
-    def buy_alt(self, origin_coin: str, target_coin: str, buy_price: float):
+    def buy_alt(self, origin_coin: str, target_coin: str, buy_price: float, bridge_amount: float = None):
         origin_symbol = origin_coin
         target_symbol = target_coin
-
-        target_balance = self.get_currency_balance(target_symbol)
+        if bridge_amount is None:
+            target_balance = self.get_currency_balance(target_symbol)
+        else:
+            target_balance = bridge_amount
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
         assert abs(buy_price - from_coin_price) < 1e-15 or buy_price == 0.0
 

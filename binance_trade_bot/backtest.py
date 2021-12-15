@@ -109,7 +109,7 @@ class MockBinanceManager(BinanceAPIManager):
             key = f"{ticker_symbol} - {target_date_str}"
             val = self.sqlite_cache.get(key, None)
             if val is None:
-                print(f"No downloaded prices for {ticker_symbol}")
+                print(f"No downloaded prices for {ticker_symbol} - {target_date_str}")
                 break
             hist.append(val)
             target_date += timedelta(minutes=1)

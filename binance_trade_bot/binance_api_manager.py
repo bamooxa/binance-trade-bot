@@ -278,10 +278,16 @@ class BinanceAPIManager:  # pylint:disable=too-many-public-methods
         return price
 
     def get_historical_tickers(self, ticker_symbol: str, start_date_str: str, end_date_str: str, limit: int):
-        res = self.binance_client.get_historical_klines(
-                            ticker_symbol, "1m", start_date_str, end_date_str,
-                            limit=limit)
-        return [float(t[1]) for t in res]
+        for attempt in range(5):
+            try:
+                res = self.binance_client.get_historical_klines(
+                    ticker_symbol, "1m", start_date_str, end_date_str,
+                    limit=limit)
+                return [float(t[1]) for t in res]
+            except:
+                self.logger.warning(f"Failed to fetch tickers. Trying Again (attempt {attempt}/5)")
+                self.logger.warning(traceback.format_exc())
+            time.sleep(10)
 
     def get_currency_balance(self, currency_symbol: str, force=False) -> float:
         """
